@@ -17,14 +17,11 @@ pipeline {
 
         stage('Login to ECR') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-ecr-creds'
+                ]]) {
                     sh '''
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-
                     aws ecr get-login-password --region $AWS_REGION \
                     | docker login --username AWS --password-stdin $ECR_REPO
                     '''
@@ -44,7 +41,7 @@ pipeline {
             }
         }
 
-        stage('Push Image') {
+        stage('Push Image to ECR') {
             steps {
                 sh 'docker push $ECR_REPO:latest'
             }
